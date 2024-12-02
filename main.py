@@ -173,7 +173,15 @@ def admin_info(message):
 
 
 def admin_delete(message):
-    id_str, name = str(message.text).split("-")
+    text = str(message.text)
+    if "-" not in text:
+        bot.send_message(
+            message.from_user.id,
+            "Некорректный ввод"
+        )
+        return
+
+    id_str, name = text.split("-")
     if id_str not in os.listdir("data"):
         bot.send_message(
             message.from_user.id,
@@ -194,7 +202,7 @@ def admin_delete(message):
     os.remove(f"data/{id_str}")
     bot.send_message(
         message.from_user.id,
-        f"{message.text} удален"
+        f"Участник {message.text} удален"
     )
 
 
