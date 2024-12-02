@@ -9,17 +9,29 @@ bot = TeleBot(token)
 
 @bot.message_handler(content_types=["text"])
 def message_handler(message):
-    match message.text:
-        case "/start":
+    match message.text, str(message.from_user.id):
+        case "/ahelp", "495668267":
+            bot.send_message(
+                "495668267",
+                "/ahelp\n/ainfo\n/adel"
+            )
+
+        case "/ainfo", "495668267":
+            admin_info(message)
+
+        case "/adel", "495668267":
+            bot.register_next_step_handler(message, admin_delete)
+
+        case "/start", _:
             greet(message)
 
-        case "/info":
+        case "/info", _:
             get_info(message)
 
-        case "/gift":
+        case "/gift", _:
             gift_to(message)
 
-        case "/members":
+        case "/members", _:
             members(message)
 
         case _:
@@ -48,6 +60,12 @@ def greet(message):
 
 def get_info(message):
     id_str = str(message.from_user.id)
+    if id_str not in os.listdir("data"):
+        bot.send_message(
+            message.from_user.id,
+            "Пожалуйста введите /start для регистрации"
+        )
+        return
     with open(f"data/{id_str}", "r") as file:
         data = json.load(file)
 
@@ -85,6 +103,13 @@ def callback_worker(call):
 
 def change_name(message):
     id_str = str(message.from_user.id)
+    if id_str not in os.listdir("data"):
+        bot.send_message(
+            message.from_user.id,
+            "Пожалуйста введите /start для регистрации"
+        )
+        return
+
     with open(f"data/{id_str}", "r") as file:
         data = json.load(file)
     data["name"] = message.text
@@ -98,6 +123,13 @@ def change_name(message):
 
 def change_wish(message):
     id_str = str(message.from_user.id)
+    if id_str not in os.listdir("data"):
+        bot.send_message(
+            message.from_user.id,
+            "Пожалуйста введите /start для регистрации"
+        )
+        return
+
     with open(f"data/{id_str}", "r") as file:
         data = json.load(file)
     data["wish"] = message.text
@@ -118,15 +150,51 @@ def gift_to(message):
 
 def members(message):
     names = []
-    for id_str in os.listdir("data"):
+    for n, id_str in enumerate(os.listdir("data"), 1):
         with open(f"data/{id_str}", "r") as file:
             data = json.load(file)
-        names.append(data["name"])
+        names.append(f"{n}. {data['name']}")
     names = "\n".join(names)
 
     bot.send_message(
         message.from_user.id,
         f"Текущие участники: \n{names}"
+    )
+
+
+def admin_info(message):
+    for id_str in os.listdir("data"):
+        with open(f"data/{id_str}", "r") as file:
+            data = json.load(file)
+        bot.send_message(
+            message.from_user.id,
+            f"{id_str}-{data['name']}"
+        )
+
+
+def admin_delete(message):
+    id_str, name = str(message.text).split("-")
+    if id_str not in os.listdir("data"):
+        bot.send_message(
+            message.from_user.id,
+            "Нет такого id"
+        )
+        return
+
+    with open(f"data/{id_str}", "r") as file:
+        data = json.load(file)
+
+    if name != data["name"]:
+        bot.send_message(
+            message.from_user.id,
+            "Имя не совпадает"
+        )
+        return
+
+    os.remove(f"data/{id_str}")
+    bot.send_message(
+        message.from_user.id,
+        f"{message.text} удален"
     )
 
 
